@@ -87,7 +87,7 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF004D4D),
+                                      color: const Color(0xFF006B66),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: const Text('Edit', style: TextStyle(color: Colors.white)),
