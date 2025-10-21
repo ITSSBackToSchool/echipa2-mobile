@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -11,13 +10,14 @@ class DashboardPage extends StatelessWidget {
       title: Text(title),
       onTap: () {
         Navigator.pop(context); // close drawer
-        // Avoid pushing the same route repeatedly
+        // Avoid pushing the same route repeatedly: if already on dashboard and route is '/dashboard', just pop
         if (ModalRoute.of(context)?.settings.name != route) {
           Navigator.pushNamed(context, route);
         }
       },
     );
   }
+
   @override
   Widget build(BuildContext context) {
     final List<Map<String, String>> reservations = [
@@ -43,15 +43,10 @@ class DashboardPage extends StatelessWidget {
 
     final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
-        statusBarColor: Color(0xFF323232),
-        statusBarIconBrightness: Brightness.light,
-      ),
-      child: Scaffold(
-        key: _scaffoldKey,
-        backgroundColor: Colors.white,
-        appBar: AppBar(
+    return Scaffold(
+      key: _scaffoldKey,
+      backgroundColor: Colors.white,
+      appBar: AppBar(
         title: const Text("OffiSeat", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
