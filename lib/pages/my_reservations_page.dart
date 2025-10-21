@@ -57,7 +57,7 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
         elevation: 0,
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -109,17 +109,6 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      // Avatar circle like the screenshot
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF7FD3CF),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Center(child: Text('R', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                      ),
                     ],
                   );
                 },
@@ -141,8 +130,8 @@ class _BottomNavBar extends StatelessWidget {
     final isBookingPage = route.startsWith('/book_');
     final currentIndex = (route == '/book_room' || route.startsWith('/book_room')) ? 1 : 0;
     return BottomNavigationBar(
-      selectedItemColor: isBookingPage ? const Color(0xFF004D4D) : Colors.grey,
-      unselectedItemColor: Colors.grey,
+      selectedItemColor: isBookingPage ? const Color(0xFF004D4D) : const Color(0xFF5E5F60),
+      unselectedItemColor: const Color(0xFF5E5F60),
       currentIndex: currentIndex,
       showUnselectedLabels: true,
       onTap: (index) {

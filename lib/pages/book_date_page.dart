@@ -96,8 +96,8 @@ class _BottomNavBar extends StatelessWidget {
     final isBookingPage = route.startsWith('/book_');
     final currentIndex = (route == '/book_room' || route.startsWith('/book_room')) ? 1 : 0;
     return BottomNavigationBar(
-      selectedItemColor: isBookingPage ? const Color(0xFF004D4D) : Colors.grey,
-      unselectedItemColor: Colors.grey,
+      selectedItemColor: isBookingPage ? const Color(0xFF004D4D) : const Color(0xFF5E5F60),
+      unselectedItemColor: const Color(0xFF5E5F60),
       currentIndex: currentIndex,
       showUnselectedLabels: true,
       onTap: (index) {

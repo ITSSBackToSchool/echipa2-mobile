@@ -126,7 +126,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF004D4D),
+                      color: const Color(0xFF006B66),
                     ),
                   ),
                 ),
@@ -171,7 +171,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           icon: const Icon(Icons.event_seat),
                           label: const Text("Book a Seat"),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF004D4D),
+                            backgroundColor: const Color(0xFF006B66),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -186,7 +186,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           icon: const Icon(Icons.meeting_room_outlined),
                           label: const Text("Book a Room"),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF004D4D),
+                            backgroundColor: const Color(0xFF006B66),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -339,8 +339,8 @@ class _DashboardPageState extends State<DashboardPage> {
         final isBookingPage = route.startsWith('/book_');
         final currentIndex = (route == '/book_room' || route.startsWith('/book_room')) ? 1 : 0;
         return BottomNavigationBar(
-          selectedItemColor: isBookingPage ? const Color(0xFF004D4D) : Colors.grey,
-          unselectedItemColor: Colors.grey,
+          selectedItemColor: isBookingPage ? const Color(0xFF004D4D) : const Color(0xFF5E5F60),
+          unselectedItemColor: const Color(0xFF5E5F60),
           showUnselectedLabels: true,
           currentIndex: currentIndex,
           onTap: (index) {
