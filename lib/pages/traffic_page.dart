@@ -19,10 +19,10 @@ class TrafficPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+    final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
     return Scaffold(
-      key: _scaffoldKey,
+      key: scaffoldKey,
       appBar: AppBar(
         title: const Text("Traffic"),
         backgroundColor: Colors.white,
@@ -35,7 +35,7 @@ class TrafficPage extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.menu),
-            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+            onPressed: () => scaffoldKey.currentState?.openDrawer(),
           ),
         ],
       ),
@@ -58,16 +58,21 @@ class TrafficPage extends StatelessWidget {
                   ],
                 ),
               ),
-              // Navigation items (match bottom nav)
+              // Navigation items (reduced)
               _navItem(context, Icons.home, 'Home', '/dashboard'),
-              _navItem(context, Icons.event_seat, 'Book My Seat', '/book_date'),
-              _navItem(context, Icons.meeting_room, 'Book An Office', '/book_room'),
               _navItem(context, Icons.list_alt, 'My Bookings', '/my_bookings'),
-              _navItem(context, Icons.traffic, 'Traffic', '/traffic'),
               _navItem(context, Icons.wb_sunny, 'Weather', '/weather'),
+              _navItem(context, Icons.traffic, 'Traffic', '/traffic'),
               const Divider(),
-              _navItem(context, Icons.login, 'Login', '/login'),
-              _navItem(context, Icons.person_add, 'Register', '/register'),
+              // Log out
+              ListTile(
+                leading: const Icon(Icons.logout, color: Color(0xFF004D4D)),
+                title: const Text('Log out'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                },
+              ),
             ],
           ),
         ),
@@ -87,6 +92,7 @@ class TrafficPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
+                    // ignore: deprecated_member_use
                     color: Colors.black.withOpacity(0.06),
                     blurRadius: 8,
                     offset: const Offset(0, 6),

@@ -41,10 +41,10 @@ class DashboardPage extends StatelessWidget {
       },
     ];
 
-    final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+    final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
     return Scaffold(
-      key: _scaffoldKey,
+      key: scaffoldKey,
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text("OffiSeat", style: TextStyle(fontWeight: FontWeight.bold)),
@@ -56,7 +56,7 @@ class DashboardPage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.menu),
             onPressed: () {
-              _scaffoldKey.currentState?.openDrawer();
+              scaffoldKey.currentState?.openDrawer();
             },
           ),
         ],
@@ -80,17 +80,22 @@ class DashboardPage extends StatelessWidget {
                   ],
                 ),
               ),
-              // Navigation items (match bottom nav)
+              // Navigation items (reduced)
               _navItem(context, Icons.home, 'Home', '/dashboard'),
-              _navItem(context, Icons.event_seat, 'Book My Seat', '/book_date'),
-              _navItem(context, Icons.meeting_room, 'Book An Office', '/book_room'),
               _navItem(context, Icons.list_alt, 'My Bookings', '/my_bookings'),
-              _navItem(context, Icons.traffic, 'Traffic', '/traffic'),
               _navItem(context, Icons.wb_sunny, 'Weather', '/weather'),
+              _navItem(context, Icons.traffic, 'Traffic', '/traffic'),
               const Divider(),
-              // Additional pages
-              _navItem(context, Icons.login, 'Login', '/login'),
-              _navItem(context, Icons.person_add, 'Register', '/register'),
+              // Log out
+              ListTile(
+                leading: const Icon(Icons.logout, color: Color(0xFF004D4D)),
+                title: const Text('Log out'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Implement logout action: navigate to login and clear stack
+                  Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                },
+              ),
             ],
           ),
         ),
@@ -133,6 +138,7 @@ class DashboardPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
+                    // ignore: deprecated_member_use
                     color: Colors.black.withOpacity(0.1),
                     blurRadius: 6,
                     offset: const Offset(0, 3),
@@ -215,6 +221,7 @@ class DashboardPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
+                        // ignore: deprecated_member_use
                         color: Colors.black.withOpacity(0.08),
                         blurRadius: 6,
                         offset: const Offset(0, 3),
@@ -285,22 +292,19 @@ class DashboardPage extends StatelessWidget {
         ),
       ),
 
-      // 🔹 Bottom Navigation Bar
+      // 🔹 Bottom Navigation Bar (only Book a Seat and Book a Room)
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: const Color(0xFF004D4D),
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
         currentIndex: 0,
         onTap: (index) {
-          if (index == 1) Navigator.pushNamed(context, '/book_date');
-          if (index == 2) Navigator.pushNamed(context, '/book_room');
+          if (index == 0) Navigator.pushNamed(context, '/book_date');
+          if (index == 1) Navigator.pushNamed(context, '/book_room');
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.event_seat), label: 'Seats'),
-          BottomNavigationBarItem(icon: Icon(Icons.meeting_room), label: 'Rooms'),
-          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'My Bookings'),
-          BottomNavigationBarItem(icon: Icon(Icons.traffic), label: 'Traffic'),
+          BottomNavigationBarItem(icon: Icon(Icons.event_seat), label: 'Book a Seat'),
+          BottomNavigationBarItem(icon: Icon(Icons.meeting_room), label: 'Book a Room'),
         ],
       ),
     );
