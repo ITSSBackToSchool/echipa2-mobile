@@ -1,7 +1,35 @@
 import 'package:flutter/material.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+
+  List<Map<String, String>> reservations = [
+    {
+      "type": "Desk Booking",
+      "details": "Building T1 • Floor 2 • Quiet Zone, Seat #1-2",
+      "date": "18-10-2025",
+      "time": "09:00 - 17:00"
+    },
+    {
+      "type": "Desk Booking",
+      "details": "Building T1 • Floor 2 • Quiet Zone, Seat #1-2",
+      "date": "18-10-2025",
+      "time": "09:00 - 17:00"
+    },
+    {
+      "type": "Meeting Room",
+      "details": "Building T1 • Floor 2 • Conference Room 65",
+      "date": "18-10-2025",
+      "time": "09:00 - 17:00"
+    },
+  ];
 
   // Helper to build a ListTile that navigates to a named route and closes the drawer
   Widget _navItem(BuildContext context, IconData icon, String title, String route) {
@@ -20,29 +48,6 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, String>> reservations = [
-      {
-        "type": "Desk Booking",
-        "details": "Building T1 • Floor 2 • Quiet Zone, Seat #1-2",
-        "date": "18-10-2025",
-        "time": "09:00 - 17:00"
-      },
-      {
-        "type": "Desk Booking",
-        "details": "Building T1 • Floor 2 • Quiet Zone, Seat #1-2",
-        "date": "18-10-2025",
-        "time": "09:00 - 17:00"
-      },
-      {
-        "type": "Meeting Room",
-        "details": "Building T1 • Floor 2 • Conference Room 65",
-        "date": "18-10-2025",
-        "time": "09:00 - 17:00"
-      },
-    ];
-
-    final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
-
     return Scaffold(
       key: scaffoldKey,
       backgroundColor: Colors.white,
@@ -161,16 +166,38 @@ class DashboardPage extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: ElevatedButton.icon(
+                        child: OutlinedButton.icon(
                           onPressed: () => Navigator.pushNamed(context, '/book_date'),
-                          icon: const Icon(Icons.event_seat, color: Colors.white),
-                          label: const Text("Book a Seat", style: TextStyle(color: Colors.white)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF004D4D),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+                          icon: const Icon(Icons.event_seat),
+                          label: const Text("Book a Seat"),
+                          style: ButtonStyle(
+                            side: MaterialStateProperty.resolveWith<BorderSide?>((states) {
+                              // hide border when hovered/pressed to emulate ElevatedButton
+                              if (states.contains(MaterialState.hovered) || states.contains(MaterialState.pressed)) {
+                                return null;
+                              }
+                              return const BorderSide(color: Color(0xFF004D4D));
+                            }),
+                            backgroundColor: MaterialStateProperty.resolveWith((states) {
+                              if (states.contains(MaterialState.hovered) || states.contains(MaterialState.pressed)) {
+                                return const Color(0xFF004D4D);
+                              }
+                              return Colors.transparent;
+                            }),
+                            elevation: MaterialStateProperty.resolveWith<double>((states) {
+                              if (states.contains(MaterialState.hovered) || states.contains(MaterialState.pressed)) {
+                                return 4.0;
+                              }
+                              return 0.0;
+                            }),
+                            foregroundColor: MaterialStateProperty.resolveWith((states) {
+                              if (states.contains(MaterialState.hovered) || states.contains(MaterialState.pressed)) {
+                                return Colors.white;
+                              }
+                              return const Color(0xFF004D4D);
+                            }),
+                            padding: MaterialStateProperty.all(const EdgeInsets.symmetric(vertical: 14)),
+                            shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
                           ),
                         ),
                       ),
@@ -180,13 +207,33 @@ class DashboardPage extends StatelessWidget {
                           onPressed: () => Navigator.pushNamed(context, '/book_room'),
                           icon: const Icon(Icons.meeting_room_outlined),
                           label: const Text("Book a Room"),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            side: const BorderSide(color: Color(0xFF004D4D)),
-                            foregroundColor: const Color(0xFF004D4D),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+                          style: ButtonStyle(
+                            side: MaterialStateProperty.resolveWith<BorderSide?>((states) {
+                              if (states.contains(MaterialState.hovered) || states.contains(MaterialState.pressed)) {
+                                return null;
+                              }
+                              return const BorderSide(color: Color(0xFF004D4D));
+                            }),
+                            backgroundColor: MaterialStateProperty.resolveWith((states) {
+                              if (states.contains(MaterialState.hovered) || states.contains(MaterialState.pressed)) {
+                                return const Color(0xFF004D4D);
+                              }
+                              return Colors.transparent;
+                            }),
+                            elevation: MaterialStateProperty.resolveWith<double>((states) {
+                              if (states.contains(MaterialState.hovered) || states.contains(MaterialState.pressed)) {
+                                return 4.0;
+                              }
+                              return 0.0;
+                            }),
+                            foregroundColor: MaterialStateProperty.resolveWith((states) {
+                              if (states.contains(MaterialState.hovered) || states.contains(MaterialState.pressed)) {
+                                return Colors.white;
+                              }
+                              return const Color(0xFF004D4D);
+                            }),
+                            padding: MaterialStateProperty.all(const EdgeInsets.symmetric(vertical: 14)),
+                            shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
                           ),
                         ),
                       ),
@@ -212,7 +259,9 @@ class DashboardPage extends StatelessWidget {
 
             // List of reservations
             Column(
-              children: reservations.map((res) {
+              children: reservations.asMap().entries.map((entry) {
+                final index = entry.key;
+                final res = entry.value;
                 return Container(
                   margin: const EdgeInsets.only(bottom: 14),
                   padding: const EdgeInsets.all(16),
@@ -273,7 +322,37 @@ class DashboardPage extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           OutlinedButton.icon(
-                            onPressed: () {},
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Are you sure you want to delete?'),
+                                  actions: [
+                                    ElevatedButton(
+                                      onPressed: () => Navigator.of(ctx).pop(false),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF004D4D),
+                                        foregroundColor: Colors.white,
+                                      ),
+                                      child: const Text('No'),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () => Navigator.of(ctx).pop(true),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF004D4D),
+                                        foregroundColor: Colors.white,
+                                      ),
+                                      child: const Text('Yes'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirm == true) {
+                                setState(() {
+                                  reservations.removeAt(index);
+                                });
+                              }
+                            },
                             icon: const Icon(Icons.delete_outline, size: 18),
                             label: const Text("Cancel"),
                             style: OutlinedButton.styleFrom(
@@ -293,20 +372,25 @@ class DashboardPage extends StatelessWidget {
       ),
 
       // 🔹 Bottom Navigation Bar (only Book a Seat and Book a Room)
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: const Color(0xFF004D4D),
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
-        currentIndex: 0,
-        onTap: (index) {
-          if (index == 0) Navigator.pushNamed(context, '/book_date');
-          if (index == 1) Navigator.pushNamed(context, '/book_room');
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.event_seat), label: 'Book a Seat'),
-          BottomNavigationBarItem(icon: Icon(Icons.meeting_room), label: 'Book a Room'),
-        ],
-      ),
+      bottomNavigationBar: Builder(builder: (context) {
+        final route = ModalRoute.of(context)?.settings.name ?? '';
+        final isBookingPage = route.startsWith('/book_');
+        final currentIndex = (route == '/book_room' || route.startsWith('/book_room')) ? 1 : 0;
+        return BottomNavigationBar(
+          selectedItemColor: isBookingPage ? const Color(0xFF004D4D) : Colors.grey,
+          unselectedItemColor: Colors.grey,
+          showUnselectedLabels: true,
+          currentIndex: currentIndex,
+          onTap: (index) {
+            if (index == 0) Navigator.pushNamed(context, '/book_date');
+            if (index == 1) Navigator.pushNamed(context, '/book_room');
+          },
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.event_seat), label: 'Book a Seat'),
+            BottomNavigationBarItem(icon: Icon(Icons.meeting_room), label: 'Book a Room'),
+          ],
+        );
+      }),
     );
   }
 }

@@ -112,17 +112,21 @@ class _BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final route = ModalRoute.of(context)?.settings.name ?? '';
+    final isBookingPage = route.startsWith('/book_');
+    final currentIndex = (route == '/book_room' || route.startsWith('/book_room')) ? 1 : 0;
     return BottomNavigationBar(
-      selectedItemColor: const Color(0xFF004D4D),
+      selectedItemColor: isBookingPage ? const Color(0xFF004D4D) : Colors.grey,
       unselectedItemColor: Colors.grey,
-      currentIndex: 1,
+      currentIndex: currentIndex,
       showUnselectedLabels: true,
+      onTap: (index) {
+        if (index == 0) Navigator.pushNamed(context, '/book_date');
+        if (index == 1) Navigator.pushNamed(context, '/book_room');
+      },
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-        BottomNavigationBarItem(icon: Icon(Icons.event_seat), label: "Seats"),
-        BottomNavigationBarItem(icon: Icon(Icons.meeting_room), label: "Rooms"),
-        BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: "My Bookings"),
-        BottomNavigationBarItem(icon: Icon(Icons.traffic), label: "Traffic"),
+        BottomNavigationBarItem(icon: Icon(Icons.event_seat), label: "Book a Seat"),
+        BottomNavigationBarItem(icon: Icon(Icons.meeting_room), label: "Book a Room"),
       ],
     );
   }
