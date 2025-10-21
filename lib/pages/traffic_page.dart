@@ -3,9 +3,26 @@ import 'package:flutter/material.dart';
 class TrafficPage extends StatelessWidget {
   const TrafficPage({super.key});
 
+  // Helper to build a ListTile that navigates to a named route and closes the drawer
+  Widget _navItem(BuildContext context, IconData icon, String title, String route) {
+    return ListTile(
+      leading: Icon(icon, color: const Color(0xFF004D4D)),
+      title: Text(title),
+      onTap: () {
+        Navigator.pop(context); // close drawer
+        if (ModalRoute.of(context)?.settings.name != route) {
+          Navigator.pushNamed(context, route);
+        }
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         title: const Text("Traffic"),
         backgroundColor: Colors.white,
@@ -14,6 +31,45 @@ class TrafficPage extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+          ),
+        ],
+      ),
+      drawer: Drawer(
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              DrawerHeader(
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE6F2F2),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Text('OffiSeat', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF004D4D))),
+                    SizedBox(height: 6),
+                    Text('Navigate to a page', style: TextStyle(color: Colors.black54)),
+                  ],
+                ),
+              ),
+              // Navigation items (match bottom nav)
+              _navItem(context, Icons.home, 'Home', '/dashboard'),
+              _navItem(context, Icons.event_seat, 'Book My Seat', '/book_date'),
+              _navItem(context, Icons.meeting_room, 'Book An Office', '/book_room'),
+              _navItem(context, Icons.list_alt, 'My Bookings', '/my_bookings'),
+              _navItem(context, Icons.traffic, 'Traffic', '/traffic'),
+              _navItem(context, Icons.wb_sunny, 'Weather', '/weather'),
+              const Divider(),
+              _navItem(context, Icons.login, 'Login', '/login'),
+              _navItem(context, Icons.person_add, 'Register', '/register'),
+            ],
+          ),
         ),
       ),
       backgroundColor: Colors.white,
@@ -27,7 +83,7 @@ class TrafficPage extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: const Color(0xFFE6F2F2),
+                color: const Color(0xFFDBEFF0),
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
@@ -133,11 +189,11 @@ class TrafficPage extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                     boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6)],
                   ),
-                  child: const Text(''),
+                  child: const Text('Home address...', style: TextStyle(color: Colors.black54)),
                 ),
                 const SizedBox(height: 12),
                 const Text('Office address:', style: TextStyle(fontWeight: FontWeight.w600)),
@@ -146,11 +202,11 @@ class TrafficPage extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                     boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6)],
                   ),
-                  child: const Text(''),
+                  child: const Text('Office address...', style: TextStyle(color: Colors.black54)),
                 ),
               ],
             ),
