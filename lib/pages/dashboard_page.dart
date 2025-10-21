@@ -3,6 +3,21 @@ import 'package:flutter/material.dart';
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
 
+  // Helper to build a ListTile that navigates to a named route and closes the drawer
+  Widget _navItem(BuildContext context, IconData icon, String title, String route) {
+    return ListTile(
+      leading: Icon(icon, color: const Color(0xFF004D4D)),
+      title: Text(title),
+      onTap: () {
+        Navigator.pop(context); // close drawer
+        // Avoid pushing the same route repeatedly: if already on dashboard and route is '/dashboard', just pop
+        if (ModalRoute.of(context)?.settings.name != route) {
+          Navigator.pushNamed(context, route);
+        }
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<Map<String, String>> reservations = [
@@ -26,7 +41,10 @@ class DashboardPage extends StatelessWidget {
       },
     ];
 
+    final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text("OffiSeat", style: TextStyle(fontWeight: FontWeight.bold)),
@@ -36,9 +54,45 @@ class DashboardPage extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.menu),
-            onPressed: () {},
+            onPressed: () {
+              // open the drawer
+              _scaffoldKey.currentState?.openDrawer();
+            },
           ),
         ],
+      ),
+      drawer: Drawer(
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              DrawerHeader(
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE6F2F2),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Text('OffiSeat', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF004D4D))),
+                    SizedBox(height: 6),
+                    Text('Navigate to a page', style: TextStyle(color: Colors.black54)),
+                  ],
+                ),
+              ),
+              // Navigation items (match bottom nav)
+              _navItem(context, Icons.home, 'Home', '/dashboard'),
+              _navItem(context, Icons.event_seat, 'Seats', '/book_date'),
+              _navItem(context, Icons.meeting_room, 'Rooms', '/book_room'),
+              _navItem(context, Icons.list_alt, 'My Bookings', '/my_bookings'),
+              _navItem(context, Icons.traffic, 'Traffic', '/traffic'),
+              const Divider(),
+              // Additional pages
+              _navItem(context, Icons.login, 'Login', '/login'),
+              _navItem(context, Icons.person_add, 'Register', '/register'),
+            ],
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -103,7 +157,7 @@ class DashboardPage extends StatelessWidget {
                         child: ElevatedButton.icon(
                           onPressed: () => Navigator.pushNamed(context, '/book_date'),
                           icon: const Icon(Icons.event_seat, color: Colors.white),
-                          label: const Text("Book a Seat"),
+                          label: const Text("Book a Seat", style: TextStyle(color: Colors.white)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF004D4D),
                             padding: const EdgeInsets.symmetric(vertical: 14),

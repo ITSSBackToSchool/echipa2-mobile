@@ -53,7 +53,7 @@ class _BookLocationPageState extends State<BookLocationPage> {
               child: Column(
                 children: [
                   DropdownButtonFormField<String>(
-                    value: selectedBuilding,
+                    initialValue: selectedBuilding,
                     decoration: InputDecoration(
                       labelText: "Building",
                       border: OutlineInputBorder(
@@ -67,7 +67,7 @@ class _BookLocationPageState extends State<BookLocationPage> {
                   ),
                   const SizedBox(height: 20),
                   DropdownButtonFormField<String>(
-                    value: selectedFloor,
+                    initialValue: selectedFloor,
                     decoration: InputDecoration(
                       labelText: "Floor",
                       border: OutlineInputBorder(
