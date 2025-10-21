@@ -41,14 +41,25 @@ class DashboardPage extends StatelessWidget {
       },
     ];
 
+    final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text("OffiSeat", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
-        // No actions: use default leading hamburger for Drawer on the left
+        automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () {
+              _scaffoldKey.currentState?.openDrawer();
+            },
+          ),
+        ],
       ),
       drawer: Drawer(
         child: SafeArea(
@@ -71,10 +82,11 @@ class DashboardPage extends StatelessWidget {
               ),
               // Navigation items (match bottom nav)
               _navItem(context, Icons.home, 'Home', '/dashboard'),
-              _navItem(context, Icons.event_seat, 'Seats', '/book_date'),
-              _navItem(context, Icons.meeting_room, 'Rooms', '/book_room'),
+              _navItem(context, Icons.event_seat, 'Book My Seat', '/book_date'),
+              _navItem(context, Icons.meeting_room, 'Book An Office', '/book_room'),
               _navItem(context, Icons.list_alt, 'My Bookings', '/my_bookings'),
               _navItem(context, Icons.traffic, 'Traffic', '/traffic'),
+              _navItem(context, Icons.wb_sunny, 'Weather', '/weather'),
               const Divider(),
               // Additional pages
               _navItem(context, Icons.login, 'Login', '/login'),
