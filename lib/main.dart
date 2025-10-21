@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'pages/book_location_page.dart';
 import 'pages/landing_page.dart';
 import 'pages/login_page.dart';
@@ -8,8 +9,16 @@ import 'pages/book_date_page.dart';
 import 'pages/book_room_page.dart';
 import 'pages/book_seat_page.dart';
 import 'pages/traffic_page.dart';
+import 'pages/my_reservations_page.dart';
 
 void main() {
+  // Set system status bar color and icons to match app design
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Color(0xFF323232),
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+  ));
+
   runApp(const OffiSeatApp());
 }
 
@@ -37,6 +46,7 @@ class OffiSeatApp extends StatelessWidget {
         '/book_room': (context) => const BookRoomPage(),
         '/book_seat': (context) => const BookSeatPage(),
         '/traffic': (context) => const TrafficPage(),
+        '/my_reservations': (context) => const MyReservationsPage(),
       },
     );
   }

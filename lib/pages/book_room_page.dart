@@ -16,7 +16,7 @@ class BookRoomPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Select a Room"),
-        backgroundColor: const Color(0xFF004D4D),
+        backgroundColor: const Color(0xFF323232),
         foregroundColor: Colors.white,
       ),
       body: Padding(

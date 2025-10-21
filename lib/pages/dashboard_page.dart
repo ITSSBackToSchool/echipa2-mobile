@@ -49,11 +49,11 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: scaffoldKey,
       backgroundColor: Colors.white,
+      key: scaffoldKey,
       appBar: AppBar(
         title: const Text("OffiSeat", style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFDBEFF0),
         foregroundColor: Colors.black,
         elevation: 0,
         automaticallyImplyLeading: false,
@@ -87,7 +87,7 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               // Navigation items (reduced)
               _navItem(context, Icons.home, 'Home', '/dashboard'),
-              _navItem(context, Icons.list_alt, 'My Bookings', '/my_bookings'),
+              _navItem(context, Icons.list_alt, 'My Bookings', '/my_reservations'),
               _navItem(context, Icons.wb_sunny, 'Weather', '/weather'),
               _navItem(context, Icons.traffic, 'Traffic', '/traffic'),
               const Divider(),
@@ -166,74 +166,31 @@ class _DashboardPageState extends State<DashboardPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton.icon(
+                        child: ElevatedButton.icon(
                           onPressed: () => Navigator.pushNamed(context, '/book_date'),
                           icon: const Icon(Icons.event_seat),
                           label: const Text("Book a Seat"),
-                          style: ButtonStyle(
-                            side: MaterialStateProperty.resolveWith<BorderSide?>((states) {
-                              // hide border when hovered/pressed to emulate ElevatedButton
-                              if (states.contains(MaterialState.hovered) || states.contains(MaterialState.pressed)) {
-                                return null;
-                              }
-                              return const BorderSide(color: Color(0xFF004D4D));
-                            }),
-                            backgroundColor: MaterialStateProperty.resolveWith((states) {
-                              if (states.contains(MaterialState.hovered) || states.contains(MaterialState.pressed)) {
-                                return const Color(0xFF004D4D);
-                              }
-                              return Colors.transparent;
-                            }),
-                            elevation: MaterialStateProperty.resolveWith<double>((states) {
-                              if (states.contains(MaterialState.hovered) || states.contains(MaterialState.pressed)) {
-                                return 4.0;
-                              }
-                              return 0.0;
-                            }),
-                            foregroundColor: MaterialStateProperty.resolveWith((states) {
-                              if (states.contains(MaterialState.hovered) || states.contains(MaterialState.pressed)) {
-                                return Colors.white;
-                              }
-                              return const Color(0xFF004D4D);
-                            }),
-                            padding: MaterialStateProperty.all(const EdgeInsets.symmetric(vertical: 14)),
-                            shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF004D4D),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            elevation: 2,
                           ),
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: OutlinedButton.icon(
+                        child: ElevatedButton.icon(
                           onPressed: () => Navigator.pushNamed(context, '/book_room'),
                           icon: const Icon(Icons.meeting_room_outlined),
                           label: const Text("Book a Room"),
-                          style: ButtonStyle(
-                            side: MaterialStateProperty.resolveWith<BorderSide?>((states) {
-                              if (states.contains(MaterialState.hovered) || states.contains(MaterialState.pressed)) {
-                                return null;
-                              }
-                              return const BorderSide(color: Color(0xFF004D4D));
-                            }),
-                            backgroundColor: MaterialStateProperty.resolveWith((states) {
-                              if (states.contains(MaterialState.hovered) || states.contains(MaterialState.pressed)) {
-                                return const Color(0xFF004D4D);
-                              }
-                              return Colors.transparent;
-                            }),
-                            elevation: MaterialStateProperty.resolveWith<double>((states) {
-                              if (states.contains(MaterialState.hovered) || states.contains(MaterialState.pressed)) {
-                                return 4.0;
-                              }
-                              return 0.0;
-                            }),
-                            foregroundColor: MaterialStateProperty.resolveWith((states) {
-                              if (states.contains(MaterialState.hovered) || states.contains(MaterialState.pressed)) {
-                                return Colors.white;
-                              }
-                              return const Color(0xFF004D4D);
-                            }),
-                            padding: MaterialStateProperty.all(const EdgeInsets.symmetric(vertical: 14)),
-                            shape: MaterialStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF004D4D),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            elevation: 2,
                           ),
                         ),
                       ),
@@ -255,7 +212,12 @@ class _DashboardPageState extends State<DashboardPage> {
               "Upcoming bookings and reservations",
               style: TextStyle(color: Colors.black54),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
+            const Divider(
+              color: Color(0xFFDDDDDD),
+              thickness: 1,
+              height: 16,
+            ),
 
             // List of reservations
             Column(
