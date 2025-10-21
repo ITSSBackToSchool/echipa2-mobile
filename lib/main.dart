@@ -7,6 +7,7 @@ import 'pages/dashboard_page.dart';
 import 'pages/book_date_page.dart';
 import 'pages/book_room_page.dart';
 import 'pages/book_seat_page.dart';
+import 'pages/traffic_page.dart';
 
 void main() {
   runApp(const OffiSeatApp());
@@ -35,7 +36,10 @@ class OffiSeatApp extends StatelessWidget {
         '/book_location': (context) => const BookLocationPage(),
         '/book_room': (context) => const BookRoomPage(),
         '/book_seat': (context) => const BookSeatPage(),
+        '/traffic': (context) => const TrafficPage(),
       },
     );
   }
 }
+
+
