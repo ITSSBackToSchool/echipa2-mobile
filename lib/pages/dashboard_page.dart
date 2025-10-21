@@ -41,25 +41,14 @@ class DashboardPage extends StatelessWidget {
       },
     ];
 
-    final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
     return Scaffold(
-      key: _scaffoldKey,
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text("OffiSeat", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () {
-              // open the drawer
-              _scaffoldKey.currentState?.openDrawer();
-            },
-          ),
-        ],
+        // No actions: use default leading hamburger for Drawer on the left
       ),
       drawer: Drawer(
         child: SafeArea(
