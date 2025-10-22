@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/user_session.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -18,27 +19,19 @@ class _DashboardPageState extends State<DashboardPage> {
       "time": "09:00 - 17:00"
     },
     {
-      "type": "Desk Booking",
-      "details": "Building T1 • Floor 2 • Quiet Zone, Seat #1-2",
-      "date": "18-10-2025",
-      "time": "09:00 - 17:00"
-    },
-    {
       "type": "Meeting Room",
       "details": "Building T1 • Floor 2 • Conference Room 65",
-      "date": "18-10-2025",
-      "time": "09:00 - 17:00"
+      "date": "19-10-2025",
+      "time": "11:00 - 13:00"
     },
   ];
 
-  // Helper to build a ListTile that navigates to a named route and closes the drawer
   Widget _navItem(BuildContext context, IconData icon, String title, String route) {
     return ListTile(
       leading: Icon(icon, color: const Color(0xFF004D4D)),
       title: Text(title),
       onTap: () {
-        Navigator.pop(context); // close drawer
-        // Avoid pushing the same route repeatedly: if already on dashboard and route is '/dashboard', just pop
+        Navigator.pop(context);
         if (ModalRoute.of(context)?.settings.name != route) {
           Navigator.pushNamed(context, route);
         }
@@ -48,6 +41,8 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final userName = UserSession.userName ?? "User";
+
     return Scaffold(
       backgroundColor: Colors.white,
       key: scaffoldKey,
@@ -66,38 +61,39 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ],
       ),
+
+      // 🔹 Drawer lateral
       drawer: Drawer(
         child: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               DrawerHeader(
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE6F2F2),
-                ),
+                decoration: const BoxDecoration(color: Color(0xFFE6F2F2)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Text('OffiSeat', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF004D4D))),
-                    SizedBox(height: 6),
-                    Text('Navigate to a page', style: TextStyle(color: Colors.black54)),
+                  children: [
+                    const Text(
+                      'OffiSeat',
+                      style: TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF004D4D)),
+                    ),
+                    const SizedBox(height: 6),
+                    Text('Logged in as $userName', style: const TextStyle(color: Colors.black54)),
                   ],
                 ),
               ),
-              // Navigation items (reduced)
               _navItem(context, Icons.home, 'Home', '/dashboard'),
               _navItem(context, Icons.list_alt, 'My Bookings', '/my_reservations'),
               _navItem(context, Icons.wb_sunny, 'Weather', '/weather'),
               _navItem(context, Icons.traffic, 'Traffic', '/traffic'),
               const Divider(),
-              // Log out
               ListTile(
                 leading: const Icon(Icons.logout, color: Color(0xFF004D4D)),
                 title: const Text('Log out'),
                 onTap: () {
-                  Navigator.pop(context);
-                  // Implement logout action: navigate to login and clear stack
+                  UserSession.clear();
                   Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
                 },
               ),
@@ -105,6 +101,8 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ),
       ),
+
+      // 🔹 Conținut principal
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -120,13 +118,13 @@ class _DashboardPageState extends State<DashboardPage> {
                   errorBuilder: (_, __, ___) => const Icon(Icons.work, size: 80, color: Color(0xFF004D4D)),
                 ),
                 const SizedBox(width: 20),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    "Welcome back,\nMarcel!",
-                    style: TextStyle(
+                    "Welcome back,\n$userName!",
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF006B66),
+                      color: Color(0xFF006B66),
                     ),
                   ),
                 ),
@@ -143,7 +141,6 @@ class _DashboardPageState extends State<DashboardPage> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    // ignore: deprecated_member_use
                     color: Colors.black.withOpacity(0.1),
                     blurRadius: 6,
                     offset: const Offset(0, 3),
@@ -153,13 +150,11 @@ class _DashboardPageState extends State<DashboardPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Quick Actions",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
+                  const Text("Quick Actions",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
                   const Text(
-                    "Book your workspace or seat for today or upcoming days",
+                    "Book your workspace or meeting room easily.",
                     style: TextStyle(color: Colors.black54),
                   ),
                   const SizedBox(height: 16),
@@ -175,7 +170,6 @@ class _DashboardPageState extends State<DashboardPage> {
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            elevation: 2,
                           ),
                         ),
                       ),
@@ -190,7 +184,6 @@ class _DashboardPageState extends State<DashboardPage> {
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            elevation: 2,
                           ),
                         ),
                       ),
@@ -203,23 +196,13 @@ class _DashboardPageState extends State<DashboardPage> {
             const SizedBox(height: 30),
 
             // 📅 Reservations section
-            const Text(
-              "Your Reservations",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            const Text("Your Reservations",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            const Text(
-              "Upcoming bookings and reservations",
-              style: TextStyle(color: Colors.black54),
-            ),
-            const SizedBox(height: 8),
-            const Divider(
-              color: Color(0xFFDDDDDD),
-              thickness: 1,
-              height: 16,
-            ),
+            const Text("Upcoming bookings and reservations",
+                style: TextStyle(color: Colors.black54)),
+            const Divider(color: Color(0xFFDDDDDD), thickness: 1, height: 20),
 
-            // List of reservations
             Column(
               children: reservations.asMap().entries.map((entry) {
                 final index = entry.key;
@@ -232,7 +215,6 @@ class _DashboardPageState extends State<DashboardPage> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        // ignore: deprecated_member_use
                         color: Colors.black.withOpacity(0.08),
                         blurRadius: 6,
                         offset: const Offset(0, 3),
@@ -277,10 +259,8 @@ class _DashboardPageState extends State<DashboardPage> {
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(color: Color(0xFF004D4D)),
                             ),
-                            child: const Text(
-                              "Modify",
-                              style: TextStyle(color: Color(0xFF004D4D)),
-                            ),
+                            child: const Text("Modify",
+                                style: TextStyle(color: Color(0xFF004D4D))),
                           ),
                           const SizedBox(width: 8),
                           OutlinedButton.icon(
@@ -333,26 +313,30 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
 
-      // 🔹 Bottom Navigation Bar (only Book a Seat and Book a Room)
-      bottomNavigationBar: Builder(builder: (context) {
-        final route = ModalRoute.of(context)?.settings.name ?? '';
-        final isBookingPage = route.startsWith('/book_');
-        final currentIndex = (route == '/book_room' || route.startsWith('/book_room')) ? 1 : 0;
-        return BottomNavigationBar(
-          selectedItemColor: isBookingPage ? const Color(0xFF004D4D) : const Color(0xFF5E5F60),
-          unselectedItemColor: const Color(0xFF5E5F60),
-          showUnselectedLabels: true,
-          currentIndex: currentIndex,
-          onTap: (index) {
-            if (index == 0) Navigator.pushNamed(context, '/book_date');
-            if (index == 1) Navigator.pushNamed(context, '/book_room');
-          },
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.event_seat), label: 'Book a Seat'),
-            BottomNavigationBarItem(icon: Icon(Icons.meeting_room), label: 'Book a Room'),
-          ],
-        );
-      }),
+      // 🔹 Bottom Navigation Bar
+      bottomNavigationBar: Builder(
+        builder: (context) {
+          final route = ModalRoute.of(context)?.settings.name ?? '';
+          final isBookingPage = route.startsWith('/book_');
+          final currentIndex =
+          (route == '/book_room' || route.startsWith('/book_room')) ? 1 : 0;
+          return BottomNavigationBar(
+            selectedItemColor:
+            isBookingPage ? const Color(0xFF004D4D) : const Color(0xFF5E5F60),
+            unselectedItemColor: const Color(0xFF5E5F60),
+            showUnselectedLabels: true,
+            currentIndex: currentIndex,
+            onTap: (index) {
+              if (index == 0) Navigator.pushNamed(context, '/book_date');
+              if (index == 1) Navigator.pushNamed(context, '/book_room');
+            },
+            items: const [
+              BottomNavigationBarItem(icon: Icon(Icons.event_seat), label: 'Book a Seat'),
+              BottomNavigationBarItem(icon: Icon(Icons.meeting_room), label: 'Book a Room'),
+            ],
+          );
+        },
+      ),
     );
   }
 }

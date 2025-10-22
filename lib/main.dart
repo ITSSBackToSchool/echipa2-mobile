@@ -10,6 +10,7 @@ import 'pages/book_room_page.dart';
 import 'pages/book_seat_page.dart';
 import 'pages/traffic_page.dart';
 import 'pages/my_reservations_page.dart';
+import 'pages/weather_page.dart';
 
 void main() {
   // Set system status bar color and icons to match app design
@@ -47,6 +48,7 @@ class OffiSeatApp extends StatelessWidget {
         '/book_seat': (context) => const BookSeatPage(),
         '/traffic': (context) => const TrafficPage(),
         '/my_reservations': (context) => const MyReservationsPage(),
+        '/weather': (context) => const WeatherPage(),
       },
     );
   }
