@@ -12,6 +12,26 @@ class _BookSeatPageState extends State<BookSeatPage> {
   final int rows = 6;
   final int columns = 8;
 
+  TimeOfDay? entryTime;
+  TimeOfDay? exitTime;
+
+  Future<void> _selectTime(BuildContext context, bool isEntry) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: isEntry ? (entryTime ?? TimeOfDay.now()) : (exitTime ?? TimeOfDay.now()),
+    );
+
+    if (picked != null) {
+      setState(() {
+        if (isEntry) {
+          entryTime = picked;
+        } else {
+          exitTime = picked;
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,16 +49,54 @@ class _BookSeatPageState extends State<BookSeatPage> {
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Date: 12 Oct 2025"),
-            const Text("Time: 9 A.M."),
-            const Text("Building: Tower 1"),
-            const SizedBox(height: 20),
+            const Text("📅 Date: 12 Oct 2025"),
+            const Text("🏢 Building: Tower 1"),
+            const SizedBox(height: 16),
+
+            // 🕒 Entry Time
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _selectTime(context, true),
+                    icon: const Icon(Icons.login),
+                    label: Text(entryTime == null
+                        ? "Select Entry Time"
+                        : "Entry: ${entryTime!.format(context)}"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF004D4D),
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _selectTime(context, false),
+                    icon: const Icon(Icons.logout),
+                    label: Text(exitTime == null
+                        ? "Select Exit Time"
+                        : "Exit: ${exitTime!.format(context)}"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF004D4D),
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
             const Text(
               "Choose Your Seat",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
+
+            // 🪑 Seat grid
             Expanded(
               child: GridView.builder(
                 itemCount: rows * columns,
@@ -49,7 +107,7 @@ class _BookSeatPageState extends State<BookSeatPage> {
                 ),
                 itemBuilder: (context, index) {
                   final bool isSelected = index == selectedSeat;
-                  final bool isReserved = index % 7 == 0; // random reserved
+                  final bool isReserved = index % 7 == 0; // simulate reserved seats
                   return GestureDetector(
                     onTap: () {
                       if (!isReserved) {
@@ -71,17 +129,22 @@ class _BookSeatPageState extends State<BookSeatPage> {
                 },
               ),
             ),
+
             const SizedBox(height: 20),
+
+            // ✅ Confirm button
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: selectedSeat == -1
+                onPressed: selectedSeat == -1 || entryTime == null || exitTime == null
                     ? null
                     : () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Seat booked successfully ✅"),
+                    SnackBar(
+                      content: Text(
+                        "Seat booked from ${entryTime!.format(context)} to ${exitTime!.format(context)} ✅",
+                      ),
                     ),
                   );
                   Navigator.pushNamed(context, '/dashboard');
@@ -112,12 +175,13 @@ class _BottomNavBar extends StatelessWidget {
     final isBookingPage = route.startsWith('/book_');
     final currentIndex = (route == '/book_room' || route.startsWith('/book_room')) ? 1 : 0;
     return BottomNavigationBar(
-      selectedItemColor: isBookingPage ? const Color(0xFF004D4D) : const Color(0xFF5E5F60),
+      selectedItemColor:
+      isBookingPage ? const Color(0xFF004D4D) : const Color(0xFF5E5F60),
       unselectedItemColor: const Color(0xFF5E5F60),
       currentIndex: currentIndex,
       showUnselectedLabels: true,
       onTap: (index) {
-        if (index == 0) Navigator.pushNamed(context, '/book_date');
+        if (index == 0) Navigator.pushNamed(context, '/book_seat');
         if (index == 1) Navigator.pushNamed(context, '/book_room');
       },
       items: const [
