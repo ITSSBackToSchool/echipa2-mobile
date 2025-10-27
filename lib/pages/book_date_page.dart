@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'book_location_page.dart';
+
 class BookDatePage extends StatefulWidget {
   const BookDatePage({super.key});
 
@@ -68,7 +70,15 @@ class _BookDatePageState extends State<BookDatePage> {
               height: 50,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.pushNamed(context, '/book_location');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BookLocationPage(
+                        selectedDate: selectedDate,
+                        selectedTime: selectedTime,
+                      ),
+                    ),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF004D4D),

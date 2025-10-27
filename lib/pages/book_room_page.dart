@@ -11,21 +11,57 @@ class BookRoomPage extends StatefulWidget {
 }
 
 class _BookRoomPageState extends State<BookRoomPage> {
-  final List<Map<String, dynamic>> rooms = [
-    {"id": 1, "name": "Room A", "capacity": 8},
-    {"id": 2, "name": "Room B", "capacity": 12},
-    {"id": 3, "name": "Room C", "capacity": 6},
-    {"id": 4, "name": "Room D", "capacity": 10},
-  ];
-
+  List<Map<String, dynamic>> rooms = [];
   DateTime selectedDate = DateTime.now();
   TimeOfDay? entryTime;
   TimeOfDay? exitTime;
   int selectedRoomId = -1;
-
   bool loading = false;
+  bool loadingRooms = false;
 
-  // 🔹 Selectează data
+  // 🔹 Fetch rooms from backend
+  Future<void> _fetchRooms() async {
+    setState(() => loadingRooms = true);
+
+    try {
+      final response = await http.get(
+        Uri.parse("http://10.0.2.2:8080/api/rooms"),
+        headers: {
+          "Content-Type": "application/json",
+          if (UserSession.token != null)
+            "Authorization": "Bearer ${UserSession.token}",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List data = jsonDecode(response.body);
+        setState(() {
+          rooms = data.map((room) {
+            return {
+              "id": room["id"],
+              "name": room["name"],       // room name
+              "floorName": room["floorName"], // floor
+              "buildingName": room["buildingName"], // building
+            };
+          }).toList();
+        });
+
+
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to load rooms (${response.statusCode})")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Connection error: $e")),
+      );
+    } finally {
+      setState(() => loadingRooms = false);
+    }
+  }
+
+  // 🔹 Select date
   Future<void> _selectDate(BuildContext context) async {
     final picked = await showDatePicker(
       context: context,
@@ -36,7 +72,7 @@ class _BookRoomPageState extends State<BookRoomPage> {
     if (picked != null) setState(() => selectedDate = picked);
   }
 
-  // 🔹 Selectează ora
+  // 🔹 Select entry/exit time
   Future<void> _selectTime(BuildContext context, bool isEntry) async {
     final picked = await showTimePicker(
       context: context,
@@ -53,7 +89,14 @@ class _BookRoomPageState extends State<BookRoomPage> {
     }
   }
 
-  // 🔹 Trimite rezervarea în backend
+  // ✅ FIXED: Properly format TimeOfDay to "HH:mm:ss"
+  String _formatTimeOfDay(TimeOfDay time) {
+    final now = DateTime.now();
+    final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
+    return "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:00";
+  }
+
+  // 🔹 Book room
   Future<void> _bookRoom() async {
     if (selectedRoomId == -1 || entryTime == null || exitTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -62,13 +105,15 @@ class _BookRoomPageState extends State<BookRoomPage> {
       return;
     }
 
-    final userId = UserSession.userId ?? 1; // fallback dacă nu e setat
+    final userId = UserSession.userId ?? 1;
+
+    // ✅ FIXED: Send correctly formatted times to match backend LocalTime
     final body = {
       "userId": userId,
-      "roomId": selectedRoomId,
-      "date": selectedDate.toIso8601String().split('T').first,
-      "entryTime": entryTime!.format(context),
-      "exitTime": exitTime!.format(context),
+      "roomIds": selectedRoomId,
+      "reservationDate": selectedDate.toIso8601String().split('T').first,
+      "startTime": _formatTimeOfDay(entryTime!), // ✅ FIXED
+      "endTime": _formatTimeOfDay(exitTime!),     // ✅ FIXED
     };
 
     setState(() => loading = true);
@@ -90,7 +135,7 @@ class _BookRoomPageState extends State<BookRoomPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Room booked successfully ✅")),
         );
-        Navigator.pushNamed(context, '/my_reservations');
+        Navigator.pushNamed(context, '/dashboard');
       } else if (response.statusCode == 403) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Access denied (403): insufficient permissions.")),
@@ -109,6 +154,12 @@ class _BookRoomPageState extends State<BookRoomPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _fetchRooms();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -122,7 +173,7 @@ class _BookRoomPageState extends State<BookRoomPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🗓️ Data
+            // 🗓️ Date picker
             Row(
               children: [
                 Expanded(
@@ -184,7 +235,11 @@ class _BookRoomPageState extends State<BookRoomPage> {
             const SizedBox(height: 10),
 
             Expanded(
-              child: ListView.builder(
+              child: loadingRooms
+                  ? const Center(child: CircularProgressIndicator())
+                  : rooms.isEmpty
+                  ? const Center(child: Text("No rooms available"))
+                  : ListView.builder(
                 itemCount: rooms.length,
                 itemBuilder: (context, index) {
                   final room = rooms[index];
@@ -194,20 +249,30 @@ class _BookRoomPageState extends State<BookRoomPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                       side: BorderSide(
-                        color: isSelected ? const Color(0xFF004D4D) : Colors.transparent,
+                        color: isSelected
+                            ? const Color(0xFF004D4D)
+                            : Colors.transparent,
                         width: 2,
                       ),
                     ),
                     margin: const EdgeInsets.symmetric(vertical: 6),
                     child: ListTile(
                       leading: const Icon(Icons.meeting_room, color: Color(0xFF004D4D)),
-                      title: Text(room["name"]),
-                      subtitle: Text("Capacity: ${room["capacity"]} people"),
-                      onTap: () => setState(() => selectedRoomId = room["id"]),
-                      trailing: isSelected
+                      title: Text(room["name"] ?? ""), // room name
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (room["floorName"] != null) Text("Floor: ${room["floorName"]}"),
+                          if (room["buildingName"] != null) Text("Building: ${room["buildingName"]}")
+                        ],
+                      ),
+                      trailing: selectedRoomId == room["id"]
                           ? const Icon(Icons.check_circle, color: Color(0xFF004D4D))
                           : null,
+                      onTap: () => setState(() => selectedRoomId = room["id"]),
                     ),
+
+
                   );
                 },
               ),
@@ -215,7 +280,6 @@ class _BookRoomPageState extends State<BookRoomPage> {
 
             const SizedBox(height: 12),
 
-            // ✅ Confirm button
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -237,7 +301,6 @@ class _BookRoomPageState extends State<BookRoomPage> {
         ),
       ),
 
-      // 🔹 Bottom Navigation Bar
       bottomNavigationBar: Builder(builder: (context) {
         final route = ModalRoute.of(context)?.settings.name ?? '';
         final currentIndex =
@@ -248,7 +311,8 @@ class _BookRoomPageState extends State<BookRoomPage> {
           currentIndex: currentIndex,
           onTap: (index) {
             if (index == 0) Navigator.pushNamed(context, '/book_seat');
-            if (index == 1) Navigator.pushNamed(context, '/book_room');
+            if (index == 1) Navigator.pushNamed;
+
           },
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.event_seat), label: 'Book a Seat'),

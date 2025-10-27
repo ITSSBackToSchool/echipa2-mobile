@@ -1,18 +1,73 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import '../models/user_session.dart';
+import 'book_seat_page.dart';
 
 class BookLocationPage extends StatefulWidget {
-  const BookLocationPage({super.key});
+  final DateTime selectedDate;
+  final String selectedTime;
+
+  const BookLocationPage({super.key, required this.selectedDate, required this.selectedTime});
 
   @override
   State<BookLocationPage> createState() => _BookLocationPageState();
 }
 
 class _BookLocationPageState extends State<BookLocationPage> {
-  String? selectedBuilding;
-  String? selectedFloor;
+  List<BuildingDTO> buildings = [];
+  List<FloorDTO> floors = [];
 
-  final List<String> buildings = ["Anywhere", "Tower 1", "Tower 2"];
-  final List<String> floors = ["Anywhere", "Ground", "Floor 1", "Floor 2"];
+  BuildingDTO? selectedBuilding;
+  FloorDTO? selectedFloor;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchBuildings();
+  }
+
+  Future<void> fetchBuildings() async {
+    final response = await http.get(
+      Uri.parse("http://10.0.2.2:8080/api/buildings"),
+      headers: {
+        "Content-Type": "application/json",
+        if (UserSession.token != null)
+          "Authorization": "Bearer ${UserSession.token}",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      setState(() {
+        buildings = data.map((b) => BuildingDTO.fromJson(b)).toList();
+      });
+    } else {
+      debugPrint("Failed to load buildings: ${response.body}");
+    }
+  }
+
+  Future<void> fetchFloors(int buildingId) async {
+    final response = await http.get(
+      Uri.parse("http://10.0.2.2:8080/api/buildings/$buildingId/floors"),
+      headers: {
+        "Content-Type": "application/json",
+        if (UserSession.token != null)
+          "Authorization": "Bearer ${UserSession.token}",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      setState(() {
+        floors = data.map((f) => FloorDTO.fromJson(f)).toList();
+        selectedFloor = null; // reset selected floor
+      });
+    } else {
+      debugPrint("Failed to load floors: ${response.body}");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,8 +107,8 @@ class _BookLocationPageState extends State<BookLocationPage> {
               ),
               child: Column(
                 children: [
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedBuilding,
+                  DropdownButtonFormField<BuildingDTO>(
+                    value: selectedBuilding,
                     decoration: InputDecoration(
                       labelText: "Building",
                       border: OutlineInputBorder(
@@ -61,13 +116,19 @@ class _BookLocationPageState extends State<BookLocationPage> {
                       ),
                     ),
                     items: buildings
-                        .map((b) => DropdownMenuItem(value: b, child: Text(b)))
+                        .map((b) => DropdownMenuItem(
+                      value: b,
+                      child: Text(b.name),
+                    ))
                         .toList(),
-                    onChanged: (v) => setState(() => selectedBuilding = v),
+                    onChanged: (b) {
+                      setState(() => selectedBuilding = b);
+                      if (b != null) fetchFloors(b.id);
+                    },
                   ),
                   const SizedBox(height: 20),
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedFloor,
+                  DropdownButtonFormField<FloorDTO>(
+                    value: selectedFloor,
                     decoration: InputDecoration(
                       labelText: "Floor",
                       border: OutlineInputBorder(
@@ -75,9 +136,12 @@ class _BookLocationPageState extends State<BookLocationPage> {
                       ),
                     ),
                     items: floors
-                        .map((f) => DropdownMenuItem(value: f, child: Text(f)))
+                        .map((f) => DropdownMenuItem(
+                      value: f,
+                      child: Text(f.name),
+                    ))
                         .toList(),
-                    onChanged: (v) => setState(() => selectedFloor = v),
+                    onChanged: (f) => setState(() => selectedFloor = f),
                   ),
                 ],
               ),
@@ -88,7 +152,19 @@ class _BookLocationPageState extends State<BookLocationPage> {
               height: 50,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.pushNamed(context, '/book_seat');
+                  if (selectedFloor == null) return; // ensure a floor is selected
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BookSeatPage(
+                        floorId: selectedFloor!.id,
+                        selectedDate: widget.selectedDate,
+                        entryTime: widget.selectedTime,
+                        exitTime: "5 P.M.", // or any logic to select exitTime
+                      ),
+                    ),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF004D4D),
@@ -99,6 +175,7 @@ class _BookLocationPageState extends State<BookLocationPage> {
                 child: const Text("Continue",
                     style: TextStyle(color: Colors.white, fontSize: 16)),
               ),
+
             ),
           ],
         ),
@@ -107,6 +184,30 @@ class _BookLocationPageState extends State<BookLocationPage> {
   }
 }
 
+// Models
+class BuildingDTO {
+  final int id;
+  final String name;
+
+  BuildingDTO({required this.id, required this.name});
+
+  factory BuildingDTO.fromJson(Map<String, dynamic> json) {
+    return BuildingDTO(id: json['id'], name: json['name']);
+  }
+}
+
+class FloorDTO {
+  final int id;
+  final String name;
+
+  FloorDTO({required this.id, required this.name});
+
+  factory FloorDTO.fromJson(Map<String, dynamic> json) {
+    return FloorDTO(id: json['id'], name: json['name']);
+  }
+}
+
+// Bottom nav bar unchanged
 class _BottomNavBar extends StatelessWidget {
   const _BottomNavBar();
 

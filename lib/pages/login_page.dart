@@ -32,6 +32,10 @@ class _LoginPageState extends State<LoginPage> {
         UserSession.userName = result['userName'];
         UserSession.token = result['token'];
         UserSession.role = result['role'];
+        UserSession.userId = result['id'];
+
+        print("here--------------------------------------------------------------login0${UserSession.token}");
+        print(result);
 
         Navigator.pushReplacementNamed(context, '/dashboard');
       } else {

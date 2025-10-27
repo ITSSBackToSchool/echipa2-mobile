@@ -1,260 +1,232 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_google_places_sdk/flutter_google_places_sdk.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
-class TrafficPage extends StatelessWidget {
+const kGoogleApiKey = "";
+
+class TrafficPage extends StatefulWidget {
   const TrafficPage({super.key});
 
-  // Helper to build a ListTile that navigates to a named route and closes the drawer
-  Widget _navItem(BuildContext context, IconData icon, String title, String route) {
-    return ListTile(
-      leading: Icon(icon, color: const Color(0xFF004D4D)),
-      title: Text(title),
-      onTap: () {
-        Navigator.pop(context); // close drawer
-        if (ModalRoute.of(context)?.settings.name != route) {
-          Navigator.pushNamed(context, route);
+  @override
+  State<TrafficPage> createState() => _TrafficPageState();
+}
+
+class _TrafficPageState extends State<TrafficPage> {
+  final FlutterGooglePlacesSdk _places = FlutterGooglePlacesSdk(kGoogleApiKey);
+
+  final TextEditingController _startController = TextEditingController();
+  final TextEditingController _endController = TextEditingController();
+
+  LatLng? _startCoords;
+  LatLng? _endCoords;
+
+  List<AutocompletePrediction> _startPredictions = [];
+  List<AutocompletePrediction> _endPredictions = [];
+
+  bool _loading = false;
+  Map<String, dynamic>? _trafficData;
+
+  // -------------------- TRAFFIC API --------------------
+  Future<void> _getTrafficInfo() async {
+    if (_startCoords == null || _endCoords == null) return;
+
+    setState(() => _loading = true);
+
+    final uri = Uri.parse(
+        "http://10.0.2.2:8080/api/traffic?origin=${_startCoords!.lat},${_startCoords!.lng}&destination=${_endCoords!.lat},${_endCoords!.lng}");
+
+    final response = await http.get(uri);
+
+    setState(() => _loading = false);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      setState(() => _trafficData = data);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error fetching traffic data")),
+      );
+    }
+  }
+
+  // -------------------- SEARCH AUTOCOMPLETE --------------------
+  void _searchPlaces(String query, bool isStart) async {
+    if (query.isEmpty) {
+      setState(() {
+        if (isStart) _startPredictions = [];
+        else _endPredictions = [];
+      });
+      return;
+    }
+
+    try {
+      final result = await _places.findAutocompletePredictions(
+        query,
+        countries: ["ro"],
+      );
+
+      setState(() {
+        if (isStart) _startPredictions = result.predictions;
+        else _endPredictions = result.predictions;
+      });
+    } catch (e) {
+      print("Autocomplete error: $e");
+    }
+  }
+
+  void _selectPrediction(AutocompletePrediction p, bool isStart) async {
+    final details = await _places.fetchPlace(
+      p.placeId!,
+      fields: [PlaceField.Location, PlaceField.Name, PlaceField.Address],
+    );
+
+    final location = details.place?.latLng;
+    if (location != null) {
+      setState(() {
+        if (isStart) {
+          _startController.text = details.place?.address ?? p.fullText;
+          _startCoords = LatLng(location.lat, location.lng);
+          _startPredictions = [];
+        } else {
+          _endController.text = details.place?.address ?? p.fullText;
+          _endCoords = LatLng(location.lat, location.lng);
+          _endPredictions = [];
         }
-      },
+      });
+    }
+  }
+
+  // -------------------- WIDGETS --------------------
+  Widget _buildLocationInput(
+      String label, bool isStart, TextEditingController controller, List<AutocompletePrediction> predictions) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            labelText: label,
+            hintText: "Search $label",
+            prefixIcon: Icon(isStart ? Icons.location_on : Icons.flag),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          onChanged: (text) => _searchPlaces(text, isStart),
+        ),
+        ...predictions.map((p) => ListTile(
+          title: Text(p.fullText),
+          leading: const Icon(Icons.location_city),
+          onTap: () => _selectPrediction(p, isStart),
+        )),
+      ],
     );
   }
 
+  Widget _buildTrafficCard(Map<String, dynamic> data) {
+    final formatter = NumberFormat("#,##0.0");
+    final trafficLevel = data["trafficLevel"] ?? "N/A";
+    final color = {
+      "NO_TRAFFIC": Colors.green,
+      "LIGHT": Colors.lightGreen,
+      "MEDIUM": Colors.orange,
+      "HEAVY": Colors.redAccent,
+    }[trafficLevel.toUpperCase()] ?? Colors.grey;
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Text(
+                "Traffic Summary",
+                style: TextStyle(
+                    fontSize: 20, fontWeight: FontWeight.bold, color: color),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _infoRow("Distance", "${formatter.format(data["distanceKm"])} km"),
+            _infoRow("Normal Duration", "${data["normalDurationMin"]} minutes"),
+            _infoRow("With Traffic", "${data["trafficDurationMin"]} minutes"),
+            _infoRow("Delay", "${data["trafficDelayMin"]} minutes"),
+            _infoRow("Level", data["trafficLevel"]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoRow(String label, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label,
+            style: const TextStyle(fontSize: 16, color: Colors.black54)),
+        Text(value,
+            style: const TextStyle(
+                fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black)),
+      ],
+    ),
+  );
+
+  // -------------------- BUILD --------------------
   @override
   Widget build(BuildContext context) {
-    final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      key: scaffoldKey,
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text("Traffic"),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => scaffoldKey.currentState?.openDrawer(),
-          ),
-        ],
+        title: const Text("Traffic Checker"),
+        backgroundColor: colorScheme.primary,
+        centerTitle: true,
       ),
-      drawer: Drawer(
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              DrawerHeader(
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE6F2F2),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Text('OffiSeat', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF004D4D))),
-                    SizedBox(height: 6),
-                    Text('Navigate to a page', style: TextStyle(color: Colors.black54)),
-                  ],
-                ),
-              ),
-              // Navigation items (reduced)
-              _navItem(context, Icons.home, 'Home', '/dashboard'),
-              _navItem(context, Icons.list_alt, 'My Bookings', '/my_bookings'),
-              _navItem(context, Icons.wb_sunny, 'Weather', '/weather'),
-              _navItem(context, Icons.traffic, 'Traffic', '/traffic'),
-              const Divider(),
-              // Log out
-              ListTile(
-                leading: const Icon(Icons.logout, color: Color(0xFF004D4D)),
-                title: const Text('Log out'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-      backgroundColor: Colors.white,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Calendar card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: const Color(0xFFDBEFF0),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    // ignore: deprecated_member_use
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 8,
-                    offset: const Offset(0, 6),
-                  )
-                ],
-              ),
-              child: Column(
-                children: [
-                  // Month header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      Icon(Icons.chevron_left, color: Color(0xFF004D4D)),
-                      Text('February 2022', style: TextStyle(color: Color(0xFF004D4D), fontWeight: FontWeight.w600)),
-                      Icon(Icons.chevron_right, color: Color(0xFF004D4D)),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  // Simple calendar grid placeholder
-                  Container(
-                    height: 200,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Center(
-                      child: Text(
-                        'Calendar Placeholder',
-                        style: TextStyle(color: Colors.grey[400]),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  // FROM / TO pickers
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('FROM', style: TextStyle(letterSpacing: 1.2)),
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6)],
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  Text('9 h 30 m', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF004D4D))),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('TO', style: TextStyle(letterSpacing: 1.2)),
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6)],
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  Text('9 h 30 m', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF004D4D))),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
+            _buildLocationInput("Starting Point", true, _startController, _startPredictions),
+            const SizedBox(height: 16),
+            _buildLocationInput("Destination", false, _endController, _endPredictions),
             const SizedBox(height: 24),
-
-            // Address fields
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Home address:', style: TextStyle(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6)],
-                  ),
-                  child: const Text('Home address...', style: TextStyle(color: Colors.black54)),
-                ),
-                const SizedBox(height: 12),
-                const Text('Office address:', style: TextStyle(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 6)],
-                  ),
-                  child: const Text('Office address...', style: TextStyle(color: Colors.black54)),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Continue button
             SizedBox(
               width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: () {},
+              child: ElevatedButton.icon(
+                onPressed: _loading ? null : _getTrafficInfo,
+                icon: const Icon(Icons.traffic),
+                label: const Text("Check Traffic"),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF006B66),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                child: const Text('Continue', style: TextStyle(fontSize: 16, color: Colors.white)),
               ),
             ),
+            const SizedBox(height: 24),
+            if (_loading)
+              const CircularProgressIndicator()
+            else if (_trafficData != null)
+              _buildTrafficCard(_trafficData!)
+            else
+              const Text(
+                "Select both start and destination to check traffic.",
+                style: TextStyle(color: Colors.black54),
+                textAlign: TextAlign.center,
+              ),
           ],
         ),
       ),
-      // Bottom navigation (same behavior as dashboard)
-      bottomNavigationBar: Builder(builder: (context) {
-        final route = ModalRoute.of(context)?.settings.name ?? '';
-        final isBookingPage = route.startsWith('/book_');
-        final currentIndex = (route == '/book_room' || route.startsWith('/book_room')) ? 1 : 0;
-        return BottomNavigationBar(
-          selectedItemColor: isBookingPage ? const Color(0xFF004D4D) : const Color(0xFF5E5F60),
-          unselectedItemColor: const Color(0xFF5E5F60),
-          showUnselectedLabels: true,
-          currentIndex: currentIndex,
-          onTap: (index) {
-            if (index == 0) Navigator.pushNamed(context, '/book_date');
-            if (index == 1) Navigator.pushNamed(context, '/book_room');
-          },
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.event_seat), label: 'Book a Seat'),
-            BottomNavigationBarItem(icon: Icon(Icons.meeting_room), label: 'Book a Room'),
-          ],
-        );
-      }),
     );
   }
+}
+
+class LatLng {
+  final double lat;
+  final double lng;
+  LatLng(this.lat, this.lng);
 }

@@ -1,6 +1,10 @@
-import 'package:flutter/material.dart';
-import '../services/api_service.dart';
+import 'dart:io';
 
+import 'package:flutter/material.dart';
+import '../models/user_session.dart';
+import '../services/api_service.dart';
+import '../services/reservation_api.dart';
+import '../models/reservation.dart';
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
@@ -31,10 +35,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
     if (result != null) {
       final token = result['token'];
+      UserSession.userName = result['userName'];
+      UserSession.token = result['token'];
+      UserSession.role = result['role'];
+      UserSession.userId = result['id'];
       print("✅ Registered successfully, token: $token");
       setState(() => message = "Account created successfully ✅");
       Future.delayed(const Duration(seconds: 1), () {
-        Navigator.pushReplacementNamed(context, '/login');
+        Navigator.pushReplacementNamed(context, '/dashboard');
       });
     } else {
       setState(() => message = "Registration failed ❌");

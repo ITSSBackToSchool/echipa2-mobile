@@ -10,12 +10,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
-
+  http: ^1.2.0
+  google_maps_flutter: ^2.6.0
+  flutter_google_places_sdk: ^0.3.10
+  intl: ^0.19.0
   cupertino_icons: ^1.0.8
-
-
-  http: ^1.1.0
   shared_preferences: ^2.3.0
 
 dev_dependencies:

@@ -19,8 +19,9 @@ class _WeatherPageState extends State<WeatherPage> {
   String? description;
   String? icon;
   DateTime selectedDate = DateTime.now();
+  final String apiKey = "";
 
-  // 🔹 Obține vremea din Visual Crossing API
+  // 🔹 Fetch weather from Visual Crossing API
   Future<void> fetchWeather() async {
     setState(() => loading = true);
 
@@ -28,28 +29,42 @@ class _WeatherPageState extends State<WeatherPage> {
         "${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}";
 
     final url = Uri.parse(
-      'https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/$city/$formattedDate?unitGroup=metric&key=YOUR_API_KEY&contentType=json',
+      'https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/$city/$formattedDate'
+          '?unitGroup=metric&key=$apiKey&contentType=json',
     );
 
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final day = data['days'][0];
-      setState(() {
-        temperature = "${day['temp']}°C";
-        description = day['conditions'];
-        icon = day['icon'];
-        loading = false;
-      });
-    } else {
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final day = data['days'][0];
+        setState(() {
+          temperature = "${day['temp']}°C";
+          description = day['conditions'];
+          icon = day['icon'];
+        });
+      } else {
+        setState(() {
+          temperature = null;
+          description = "Error loading data (${response.statusCode})";
+          icon = null;
+        });
+      }
+    } catch (e) {
       setState(() {
         temperature = null;
-        description = "Error loading data";
+        description = "Network error: $e";
         icon = null;
-        loading = false;
       });
+    } finally {
+      setState(() => loading = false);
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchWeather();
   }
 
   Widget _navItem(BuildContext context, IconData icon, String title, String route) {
@@ -65,10 +80,10 @@ class _WeatherPageState extends State<WeatherPage> {
     );
   }
 
-  @override
-  void initState() {
-    super.initState();
-    fetchWeather();
+  // 🔹 Get image URL based on weather icon
+  String _getWeatherIconUrl(String? icon) {
+    if (icon == null) return "https://cdn-icons-png.flaticon.com/512/869/869869.png";
+    return "https://raw.githubusercontent.com/visualcrossing/WeatherIcons/main/PNG/4th%20Set%20-%20Color/$icon.png";
   }
 
   @override
@@ -77,12 +92,12 @@ class _WeatherPageState extends State<WeatherPage> {
 
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFE6F2F2),
       appBar: AppBar(
         title: const Text("Weather", style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFFDBEFF0),
-        foregroundColor: Colors.black,
-        elevation: 0,
+        backgroundColor: const Color(0xFF006B66),
+        foregroundColor: Colors.white,
+        elevation: 2,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -95,11 +110,9 @@ class _WeatherPageState extends State<WeatherPage> {
         ],
       ),
 
-      // 🔹 Drawer (meniu lateral)
       drawer: Drawer(
         child: SafeArea(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               DrawerHeader(
                 decoration: const BoxDecoration(color: Color(0xFFE6F2F2)),
@@ -110,7 +123,10 @@ class _WeatherPageState extends State<WeatherPage> {
                     const Text(
                       'OffiSeat',
                       style: TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF004D4D)),
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF004D4D),
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text('Logged in as $userName', style: const TextStyle(color: Colors.black54)),
@@ -135,79 +151,103 @@ class _WeatherPageState extends State<WeatherPage> {
         ),
       ),
 
-      // 🔹 Conținut principal
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 10),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 20),
 
-            // Buton pentru selectare dată
-            ElevatedButton.icon(
-              onPressed: () async {
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: selectedDate,
-                  firstDate: DateTime.now().subtract(const Duration(days: 3)),
-                  lastDate: DateTime.now().add(const Duration(days: 7)),
-                );
-                if (picked != null) {
-                  setState(() => selectedDate = picked);
-                  fetchWeather();
-                }
-              },
-              icon: const Icon(Icons.calendar_today_outlined),
-              label: const Text("Select Date"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF006B66),
-                foregroundColor: Colors.white,
+              // 🔹 Select date button
+              ElevatedButton.icon(
+                onPressed: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: selectedDate,
+                    firstDate: DateTime.now().subtract(const Duration(days: 3)),
+                    lastDate: DateTime.now().add(const Duration(days: 7)),
+                  );
+                  if (picked != null) {
+                    setState(() => selectedDate = picked);
+                    fetchWeather();
+                  }
+                },
+                icon: const Icon(Icons.calendar_today_outlined),
+                label: const Text("Select Date"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF006B66),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
               ),
-            ),
 
-            const SizedBox(height: 30),
+              const SizedBox(height: 40),
 
-            if (loading)
-              const CircularProgressIndicator(color: Color(0xFF004D4D))
-            else
-              Column(
-                children: [
-                  if (temperature != null)
-                    Text(
-                      temperature!,
-                      style: const TextStyle(
-                        fontSize: 60,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF006B66),
+              // 🔹 Weather card
+              if (loading)
+                const CircularProgressIndicator(color: Color(0xFF006B66))
+              else
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.8),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
-                    ),
-                  const SizedBox(height: 10),
-                  Text(
-                    description ?? "Select a date to see the weather",
-                    style: const TextStyle(fontSize: 18, color: Colors.black87),
+                    ],
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    "📍 $city - ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}",
-                    style: const TextStyle(color: Colors.black54),
+                  child: Column(
+                    children: [
+                      if (icon != null)
+                        Image.network(
+                          _getWeatherIconUrl(icon),
+                          width: 120,
+                          height: 120,
+                        ),
+                      const SizedBox(height: 20),
+                      if (temperature != null)
+                        Text(
+                          temperature!,
+                          style: const TextStyle(
+                            fontSize: 60,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF006B66),
+                          ),
+                        ),
+                      const SizedBox(height: 8),
+                      Text(
+                        description ?? "Select a date to see the weather",
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 20, color: Colors.black87),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        "📍 $city - ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}",
+                        style: const TextStyle(color: Colors.black54),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-          ],
+                ),
+            ],
+          ),
         ),
       ),
 
-      // 🔹 Bottom Navigation Bar
+      // 🔹 Bottom Navigation
       bottomNavigationBar: Builder(
         builder: (context) {
           final route = ModalRoute.of(context)?.settings.name ?? '';
-          final isBookingPage = route.startsWith('/book_');
           final currentIndex =
           (route == '/book_room' || route.startsWith('/book_room')) ? 1 : 0;
           return BottomNavigationBar(
-            selectedItemColor:
-            isBookingPage ? const Color(0xFF004D4D) : const Color(0xFF5E5F60),
-            unselectedItemColor: const Color(0xFF5E5F60),
+            selectedItemColor: const Color(0xFF006B66),
+            unselectedItemColor: Colors.grey,
             showUnselectedLabels: true,
             currentIndex: currentIndex,
             onTap: (index) {
