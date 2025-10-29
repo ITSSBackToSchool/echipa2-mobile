@@ -68,6 +68,13 @@ class _BookLocationPageState extends State<BookLocationPage> {
       debugPrint("Failed to load floors: ${response.body}");
     }
   }
+  String _formatDate(DateTime date) {
+    final months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,10 +95,12 @@ class _BookLocationPageState extends State<BookLocationPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const SizedBox(height: 10),
-            const Text("Date: 12 Oct 2025"),
+            Text(
+              "Date: ${_formatDate(widget.selectedDate)}",
+              style: const TextStyle(fontSize: 16),
+            ),
             const SizedBox(height: 8),
-            const Text("Time: 9 A.M."),
+            const Text("Time: 9 A.M. - 5 P.M."),
             const SizedBox(height: 20),
             const Text(
               "Choose Building and Floor",

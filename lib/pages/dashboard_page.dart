@@ -28,34 +28,55 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> fetchReservations() async {
-    final userId = UserSession.userId; // Make sure you store userId in session
-    print("...................................................................here");
-    print(UserSession.token);
-    print(UserSession.userId);
+    final userId = UserSession.userId;
+    print("Fetching reservations for user: $userId");
+
     if (userId != null) {
       final res = await ApiService.getUserReservations(userId);
-      if (res != null) {
-        setState(() {
-          reservations = res
-              .where((r) => r["status"] != "CANCELLED") // <-- filter here
-          .map((r) => {
+
+      if (res != null && res.isNotEmpty) {
+        final List<Map<String, dynamic>> fetchedReservations = res
+            .where((r) => r["status"] != "CANCELLED")
+            .map<Map<String, dynamic>>((r) {
+          final bool hasSeat = r["seatNumber"] != null;
+          final String building = r["buildingName"] ?? "";
+          final String floor = r["floorName"] ?? "";
+          final String room = r["roomName"] ?? "";
+          final String seat = r["seatNumber"] ?? "";
+
+          String details = "$building • $floor";
+          if (room.isNotEmpty) details += " • $room";
+          if (hasSeat) details += " • $seat";
+
+          return {
             "id": r["id"],
-            "type": r["seatNumber"] != null ? "Desk Booking" : "Meeting Room",
-            "details": r["roomName"] != null
-                ? "${r["buildingName"]} • ${r["floorName"]} • ${r["roomName"]}"
-                : "${r["buildingName"]} • ${r["floorName"]} • Seat ${r["seatNumber"]}",
+            "type": hasSeat ? "Desk Booking" : "Meeting Room",
+            "details": details,
             "date": r["reservationDate"] ?? "",
-            "time": "${r["startTime"] ?? ""} - ${r["endTime"] ?? ""}"
-          }).toList();
+            "time": "${r["startTime"] ?? ""} - ${r["endTime"] ?? ""}",
+          };
+        }).toList();
+
+        /// 🔹 Sortează rezervările în ordine crescătoare (cea mai apropiată sus)
+        fetchedReservations.sort((a, b) {
+          final dateA = DateTime.tryParse(a["date"] ?? "") ?? DateTime(2100);
+          final dateB = DateTime.tryParse(b["date"] ?? "") ?? DateTime(2100);
+          return dateA.compareTo(dateB);
+        });
+
+        setState(() {
+          reservations = fetchedReservations;
           isLoading = false;
         });
       } else {
         setState(() {
+          reservations = [];
           isLoading = false;
         });
       }
     }
   }
+
 
 
   Widget _navItem(BuildContext context, IconData icon, String title, String route) {
@@ -262,7 +283,13 @@ class _DashboardPageState extends State<DashboardPage> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.event_note, color: Color(0xFF004D4D)),
+                            Icon(
+                              res["type"] == "Desk Booking"
+                                  ? Icons.event_seat
+                                  : Icons.meeting_room_outlined,
+                              color: const Color(0xFF004D4D),
+                            )
+                            ,
                             const SizedBox(width: 8),
                             Text(
                               res["type"] ?? "Booking",
@@ -290,14 +317,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            OutlinedButton(
-                              onPressed: () {},
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: Color(0xFF004D4D)),
-                              ),
-                              child: const Text("Modify",
-                                  style: TextStyle(color: Color(0xFF004D4D))),
-                            ),
+
                             const SizedBox(width: 8),
                             OutlinedButton.icon(
                               onPressed: () async {

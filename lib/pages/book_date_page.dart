@@ -58,12 +58,6 @@ class _BookDatePageState extends State<BookDatePage> {
                 onDateChanged: (value) => setState(() => selectedDate = value),
               ),
             ),
-            const SizedBox(height: 20),
-            const Text("ENTRY TIME", style: TextStyle(color: Colors.black54)),
-            const SizedBox(height: 6),
-            Text(selectedTime,
-                style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.bold)),
             const Spacer(),
             SizedBox(
               width: double.infinity,

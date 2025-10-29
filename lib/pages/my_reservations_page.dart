@@ -1,10 +1,10 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import '../models/user_session.dart';
 import '../services/api_service.dart';
 import '../services/reservation_api.dart';
-import '../models/reservation.dart';
+
+enum ReservationFilter { next, done, cancelled }
 
 class MyReservationsPage extends StatefulWidget {
   const MyReservationsPage({super.key});
@@ -18,9 +18,10 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
   List<Map<String, dynamic>> reservations = [];
   bool isLoading = true;
 
+  ReservationFilter selectedFilter = ReservationFilter.next;
+
   @override
   void initState() {
-    print("------------------------------------------------------------------------");
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       fetchReservations();
@@ -37,7 +38,8 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
               .map((r) => {
             "status": r["status"],
             "id": r["id"],
-            "type": r["seatNumber"] != null ? "Desk Booking" : "Meeting Room",
+            "type":
+            r["seatNumber"] != null ? "Desk Booking" : "Meeting Room",
             "details": r["roomName"] != null
                 ? "${r["buildingName"]} • ${r["floorName"]} • ${r["roomName"]}"
                 : "${r["buildingName"]} • ${r["floorName"]} • Seat ${r["seatNumber"]}",
@@ -46,11 +48,11 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
           })
               .toList();
 
-          // 🔹 Sort so that non-cancelled reservations appear first
+          // 🔹 Sort ascending by date
           reservations.sort((a, b) {
-            if (a["status"] == "CANCELLED" && b["status"] != "CANCELLED") return 1;
-            if (a["status"] != "CANCELLED" && b["status"] == "CANCELLED") return -1;
-            return 0;
+            final dateA = DateTime.tryParse(a["date"] ?? "") ?? DateTime.now();
+            final dateB = DateTime.tryParse(b["date"] ?? "") ?? DateTime.now();
+            return dateA.compareTo(dateB);
           });
 
           isLoading = false;
@@ -62,8 +64,6 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
       }
     }
   }
-
-
 
   Widget _navItem(BuildContext context, IconData icon, String title, String route) {
     return ListTile(
@@ -78,9 +78,168 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
     );
   }
 
+  Widget filterButton(String label, ReservationFilter filter) {
+    final bool isSelected = selectedFilter == filter;
+    return Expanded(
+      child: ElevatedButton(
+        onPressed: () {
+          setState(() {
+            selectedFilter = filter;
+          });
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isSelected ? const Color(0xFF006B66) : Colors.grey[300],
+          foregroundColor: isSelected ? Colors.white : Colors.black,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: Text(label),
+      ),
+    );
+  }
+
+  Widget reservationCard(Map<String, dynamic> res) {
+    final isCancelled = res["status"] == "CANCELLED";
+    final date = DateTime.tryParse(res["date"] ?? "") ?? DateTime.now();
+    final isDone = !isCancelled && date.isBefore(DateTime.now());
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE6F2F2),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                res["type"] == "Desk Booking"
+                    ? Icons.event_seat
+                    : Icons.meeting_room_outlined,
+                color: const Color(0xFF004D4D),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                res["type"] ?? "Booking",
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(res["details"] ?? "", style: const TextStyle(color: Colors.black87)),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const Icon(Icons.calendar_today_outlined, size: 18),
+              const SizedBox(width: 6),
+              Text(res["date"] ?? ""),
+              const SizedBox(width: 16),
+              const Icon(Icons.access_time_outlined, size: 18),
+              const SizedBox(width: 6),
+              Text(res["time"] ?? ""),
+            ],
+          ),
+          if (!isCancelled && !isDone) const SizedBox(height: 14),
+          if (!isCancelled && !isDone)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Are you sure you want to delete?'),
+                        actions: [
+                          ElevatedButton(
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF004D4D),
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('No'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF004D4D),
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Yes'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true) {
+                      try {
+                        await ReservationApi.cancelReservation(res["id"]);
+                        setState(() {
+                          reservations.remove(res);
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Reservation canceled successfully')),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Failed to cancel reservation')),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                  label: const Text("Cancel"),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.red),
+                    foregroundColor: Colors.red,
+                  ),
+                ),
+              ],
+            ),
+          if (isCancelled || isDone)
+            Padding(
+              padding: const EdgeInsets.only(top: 14),
+              child: Text(
+                isCancelled ? 'Cancelled' : 'Done',
+                style: TextStyle(
+                    color: isCancelled ? Colors.red[700] : Colors.green[700],
+                    fontWeight: FontWeight.bold),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final userName = UserSession.userName ?? "User";
+
+    // 🔹 Filter reservations based on selected tab
+    final now = DateTime.now();
+    List<Map<String, dynamic>> filteredReservations = reservations.where((r) {
+      final date = DateTime.tryParse(r["date"] ?? "") ?? now;
+
+      switch (selectedFilter) {
+        case ReservationFilter.next:
+          return r["status"] != "CANCELLED" && date.isAfter(now);
+        case ReservationFilter.done:
+          return r["status"] != "CANCELLED" && date.isBefore(now);
+        case ReservationFilter.cancelled:
+          return r["status"] == "CANCELLED";
+      }
+    }).toList();
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -93,24 +252,18 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
         backgroundColor: const Color(0xFFDBEFF0),
         foregroundColor: Colors.black,
         elevation: 0,
-        automaticallyImplyLeading: false, // <-- currently false
+        automaticallyImplyLeading: false,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.menu),
-            onPressed: () {
-              scaffoldKey.currentState?.openDrawer();
-            },
+            onPressed: () => scaffoldKey.currentState?.openDrawer(),
           ),
         ],
       ),
-
-      // 🔹 Drawer lateral
       drawer: Drawer(
         child: SafeArea(
           child: Column(
@@ -149,8 +302,6 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
           ),
         ),
       ),
-
-      // 🔹 Conținut principal
       body: RefreshIndicator(
         onRefresh: fetchReservations,
         child: SingleChildScrollView(
@@ -159,163 +310,27 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 🔹 Filter tabs
+              Row(
+                children: [
+                  filterButton("Next", ReservationFilter.next),
+                  const SizedBox(width: 10),
+                  filterButton("Done", ReservationFilter.done),
+                  const SizedBox(width: 10),
+                  filterButton("Cancelled", ReservationFilter.cancelled),
+                ],
+              ),
+              const SizedBox(height: 20),
 
+              // 🔹 Reservations
               Column(
                 children: isLoading
                     ? [const Center(child: CircularProgressIndicator())]
-                    : reservations.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final res = entry.value;
-                  final isCancelled = res["status"] == "CANCELLED"; // <-- check status
-
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 14),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE6F2F2),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                        )
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.event_note, color: Color(0xFF004D4D)),
-                            const SizedBox(width: 8),
-                            Text(
-                              res["type"] ?? "Booking",
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(res["details"] ?? "", style: const TextStyle(color: Colors.black87)),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            const Icon(Icons.calendar_today_outlined, size: 18),
-                            const SizedBox(width: 6),
-                            Text(res["date"] ?? ""),
-                            const SizedBox(width: 16),
-                            const Icon(Icons.access_time_outlined, size: 18),
-                            const SizedBox(width: 6),
-                            Text(res["time"] ?? ""),
-                          ],
-                        ),
-                        if (!isCancelled) const SizedBox(height: 14),
-                        if (!isCancelled)
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              OutlinedButton(
-                                onPressed: () {},
-                                style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(color: Color(0xFF004D4D)),
-                                ),
-                                child: const Text("Modify",
-                                    style: TextStyle(color: Color(0xFF004D4D))),
-                              ),
-                              const SizedBox(width: 8),
-                              OutlinedButton.icon(
-                                onPressed: () async {
-                                  final confirm = await showDialog<bool>(
-                                    context: context,
-                                    builder: (ctx) => AlertDialog(
-                                      title: const Text('Are you sure you want to delete?'),
-                                      actions: [
-                                        ElevatedButton(
-                                          onPressed: () => Navigator.of(ctx).pop(false),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(0xFF004D4D),
-                                            foregroundColor: Colors.white,
-                                          ),
-                                          child: const Text('No'),
-                                        ),
-                                        ElevatedButton(
-                                          onPressed: () => Navigator.of(ctx).pop(true),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(0xFF004D4D),
-                                            foregroundColor: Colors.white,
-                                          ),
-                                          child: const Text('Yes'),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-
-                                  if (confirm == true) {
-                                    try {
-                                      await ReservationApi.cancelReservation(reservations[index]['id']);
-                                      setState(() {
-                                        reservations.removeAt(index);
-                                      });
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Reservation canceled successfully')),
-                                      );
-                                    } catch (e) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Failed to cancel reservation')),
-                                      );
-                                    }
-                                  }
-                                },
-                                icon: const Icon(Icons.delete_outline, size: 18),
-                                label: const Text("Cancel"),
-                                style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(color: Colors.red),
-                                  foregroundColor: Colors.red,
-                                ),
-                              ),
-                            ],
-                          ),
-                        if (isCancelled)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 14),
-                            child: Text(
-                              'Cancelled',
-                              style: TextStyle(color: Colors.red[700], fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                      ],
-                    ),
-                  );
-                }).toList(),
+                    : filteredReservations.map((res) => reservationCard(res)).toList(),
               ),
-
             ],
           ),
         ),
-      ),
-      // 🔹 Bottom Navigation Bar
-      bottomNavigationBar: Builder(
-        builder: (context) {
-          final route = ModalRoute.of(context)?.settings.name ?? '';
-          final isBookingPage = route.startsWith('/book_');
-          final currentIndex =
-          (route == '/book_room' || route.startsWith('/book_room')) ? 1 : 0;
-          return BottomNavigationBar(
-            selectedItemColor:
-            isBookingPage ? const Color(0xFF004D4D) : const Color(0xFF5E5F60),
-            unselectedItemColor: const Color(0xFF5E5F60),
-            showUnselectedLabels: true,
-            currentIndex: currentIndex,
-            onTap: (index) {
-              if (index == 0) Navigator.pushNamed(context, '/book_date');
-              if (index == 1) Navigator.pushNamed(context, '/book_room');
-            },
-            items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.event_seat), label: 'Book a Seat'),
-              BottomNavigationBarItem(icon: Icon(Icons.meeting_room), label: 'Book a Room'),
-            ],
-          );
-        },
       ),
     );
   }

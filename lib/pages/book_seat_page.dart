@@ -21,22 +21,6 @@ class BookSeatPage extends StatefulWidget {
   State<BookSeatPage> createState() => _BookSeatPageState();
 }
 
-// Utility to convert 12h to 24h format
-String convertTo24Hour(String time12h) {
-  final regExp = RegExp(r'(\d+)(?::(\d+))?\s*([AP]M)', caseSensitive: false);
-  final match = regExp.firstMatch(time12h);
-  if (match == null) return "00:00:00"; // fallback
-
-  int hour = int.parse(match.group(1)!);
-  final minute = match.group(2) != null ? int.parse(match.group(2)!) : 0;
-  final ampm = match.group(3)!.toUpperCase();
-
-  if (ampm == "PM" && hour != 12) hour += 12;
-  if (ampm == "AM" && hour == 12) hour = 0;
-
-  return "${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}:00";
-}
-
 class _BookSeatPageState extends State<BookSeatPage> {
   List<RoomDTO> rooms = [];
   RoomDTO? selectedRoom;
@@ -48,13 +32,13 @@ class _BookSeatPageState extends State<BookSeatPage> {
   bool loadingSeats = false;
   bool loadingBooking = false;
 
+
   @override
   void initState() {
     super.initState();
     fetchRooms();
   }
 
-  // 🔹 Fetch rooms for the selected floor
   Future<void> fetchRooms() async {
     setState(() => loadingRooms = true);
     try {
@@ -86,13 +70,12 @@ class _BookSeatPageState extends State<BookSeatPage> {
     }
   }
 
-  // 🔹 Fetch available seats for selected room
   Future<void> fetchSeats(int roomId) async {
     setState(() => loadingSeats = true);
     try {
-      final startTime = convertTo24Hour(widget.entryTime);
-      final endTime = convertTo24Hour(widget.exitTime);
       final date = widget.selectedDate.toIso8601String().split('T').first;
+      final startTime = "09:00:00";
+      final endTime = "17:00:00";
 
       final response = await http.get(
         Uri.parse(
@@ -131,10 +114,10 @@ class _BookSeatPageState extends State<BookSeatPage> {
 
     final body = {
       "userId": UserSession.userId ?? 1,
-      "seatIds": selectedSeatId,
+      "seatId": [selectedSeatId],
       "reservationDate": widget.selectedDate.toIso8601String().split('T').first,
-      "startTime": widget.entryTime,
-      "endTime": widget.exitTime,
+      "startTime": "09:00:00",
+      "endTime": "17:00:00",
     };
 
     try {
@@ -167,102 +150,155 @@ class _BookSeatPageState extends State<BookSeatPage> {
     }
   }
 
+  String _formatDate(DateTime date) {
+    final months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Book a Seat"),
-        backgroundColor: const Color(0xFF004D4D),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
       ),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Display selected date and times
             Text(
-              "Date: ${widget.selectedDate.day}-${widget.selectedDate.month}-${widget.selectedDate.year}",
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              "Date: ${_formatDate(widget.selectedDate)}",
+              style: const TextStyle(fontSize: 16),
             ),
-            const SizedBox(height: 8),
-            Text(
-              "Entry: ${widget.entryTime} | Exit: ${widget.exitTime}",
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            const SizedBox(height: 4),
+            Text("Time: ${widget.entryTime} - ${widget.exitTime}"),
+            const SizedBox(height: 20),
+            const Text(
+              "Choose Room and Seat",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-
-            // Rooms dropdown
-            loadingRooms
-                ? const Center(child: CircularProgressIndicator())
-                : DropdownButtonFormField<RoomDTO>(
-              value: selectedRoom,
-              decoration: const InputDecoration(
-                labelText: "Select Room",
-                border: OutlineInputBorder(),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE6F2F2),
+                borderRadius: BorderRadius.circular(12),
               ),
-              items: rooms
-                  .map((r) => DropdownMenuItem(
-                value: r,
-                child: Text(r.name),
-              ))
-                  .toList(),
-              onChanged: (r) {
-                setState(() => selectedRoom = r);
-                if (r != null) fetchSeats(r.id);
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // Seats list
-            Expanded(
-              child: loadingSeats
-                  ? const Center(child: CircularProgressIndicator())
-                  : seats.isEmpty
-                  ? const Center(child: Text("No seats available"))
-                  : ListView.builder(
-                itemCount: seats.length,
-                itemBuilder: (context, index) {
-                  final seat = seats[index];
-                  final bool isSelected = seat.id == selectedSeatId;
-
-                  return Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: BorderSide(
-                        color: isSelected ? const Color(0xFF004D4D) : Colors.transparent,
-                        width: 2,
+              child: Column(
+                children: [
+                  loadingRooms
+                      ? const Center(child: CircularProgressIndicator())
+                      : DropdownButtonFormField<RoomDTO>(
+                    value: selectedRoom,
+                    decoration: InputDecoration(
+                      labelText: "Room",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    margin: const EdgeInsets.symmetric(vertical: 6),
-                    child: ListTile(
-                      leading: const Icon(Icons.event_seat, color: Color(0xFF004D4D)),
-                      title: Text("Seat ${seat.seatNumber}"),
-                      subtitle: !seat.isAvailable
-                          ? Text(
-                        "Reserved by ${seat.reservedBy}",
-                        style: const TextStyle(color: Colors.red),
-                      )
-                          : null,
-                      trailing: isSelected ? const Icon(Icons.check_circle, color: Color(0xFF004D4D)) : null,
-                      onTap: seat.isAvailable
-                          ? () => setState(() => selectedSeatId = seat.id)
-                          : null,
+                    items: rooms
+                        .map((r) => DropdownMenuItem(
+                      value: r,
+                      child: Text(r.name),
+                    ))
+                        .toList(),
+                    onChanged: (r) {
+                      setState(() => selectedRoom = r);
+                      if (r != null) fetchSeats(r.id);
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 500,
+                    child: loadingSeats
+                        ? const Center(child: CircularProgressIndicator())
+                        : seats.isEmpty
+                        ? const Center(child: Text("No seats available"))
+                        : ListView.builder(
+                      itemCount: seats.length,
+                      itemBuilder: (context, index) {
+                        final seat = seats[index];
+                        final bool isSelected = seat.id == selectedSeatId;
+                        return Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: BorderSide(
+                              color: isSelected
+                                  ? const Color(0xFF004D4D)
+                                  : Colors.transparent,
+                              width: 2,
+                            ),
+                          ),
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          child: ListTile(
+                            leading: const Icon(Icons.event_seat,
+                                color: Color(0xFF004D4D)),
+                            title: Text(seat.seatNumber),
+                            subtitle: !seat.isAvailable
+                                ? Text(
+                              "Reserved by ${seat.reservedBy}",
+                              style: const TextStyle(color: Colors.red),
+                            )
+                                : null,
+                            trailing: isSelected
+                                ? const Icon(Icons.check_circle,
+                                color: Color(0xFF004D4D))
+                                : null,
+                            onTap: seat.isAvailable
+                                ? () => setState(
+                                    () => selectedSeatId = seat.id)
+                                : null,
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
             ),
-
-            // Book seat button
+            const Spacer(),
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: selectedSeatId != null && !loadingBooking ? bookSeat : null,
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF004D4D)),
+                onPressed: selectedSeatId != null && !loadingBooking
+                    ? bookSeat
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF004D4D),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
                 child: loadingBooking
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text("Book Seat", style: TextStyle(fontSize: 16)),
+                    ? const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 3,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Text(
+                      "Booking...",
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ],
+                )
+                    : const Text(
+                  "Book Seat",
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
               ),
             ),
           ],
