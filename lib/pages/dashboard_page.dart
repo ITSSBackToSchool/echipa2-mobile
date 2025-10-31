@@ -35,8 +35,35 @@ class _DashboardPageState extends State<DashboardPage> {
       final res = await ApiService.getUserReservations(userId);
 
       if (res != null && res.isNotEmpty) {
+        final now = DateTime.now();
+
         final List<Map<String, dynamic>> fetchedReservations = res
-            .where((r) => r["status"] != "CANCELLED")
+            .where((r) {
+          if (r["status"] == "CANCELLED") return false;
+
+          final dateStr = r["reservationDate"];
+          final endTimeStr = r["endTime"];
+          if (dateStr == null || endTimeStr == null) return false;
+
+          try {
+            final date = DateTime.parse(dateStr);
+            final parts = endTimeStr.split(':');
+            if (parts.length >= 2) {
+              final endDateTime = DateTime(
+                date.year,
+                date.month,
+                date.day,
+                int.parse(parts[0]),
+                int.parse(parts[1]),
+              );
+              return endDateTime.isAfter(now);
+            }
+          } catch (e) {
+            return true;
+          }
+
+          return true;
+        })
             .map<Map<String, dynamic>>((r) {
           final bool hasSeat = r["seatNumber"] != null;
           final String building = r["buildingName"] ?? "";
@@ -57,7 +84,6 @@ class _DashboardPageState extends State<DashboardPage> {
           };
         }).toList();
 
-        /// 🔹 Sortează rezervările în ordine crescătoare (cea mai apropiată sus)
         fetchedReservations.sort((a, b) {
           final dateA = DateTime.tryParse(a["date"] ?? "") ?? DateTime(2100);
           final dateB = DateTime.tryParse(b["date"] ?? "") ?? DateTime(2100);
@@ -76,6 +102,7 @@ class _DashboardPageState extends State<DashboardPage> {
       }
     }
   }
+
 
 
 

@@ -247,7 +247,6 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
       appBar: AppBar(
         title: const Text(
           "My Bookings",
-          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: const Color(0xFFDBEFF0),
         foregroundColor: Colors.black,

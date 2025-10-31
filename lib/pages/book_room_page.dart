@@ -165,8 +165,9 @@ class _BookRoomPageState extends State<BookRoomPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text("Book a Room"),
-        backgroundColor: const Color(0xFF004D4D),
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
       ),
       body: Padding(
         padding: const EdgeInsets.all(24),
@@ -184,8 +185,9 @@ class _BookRoomPageState extends State<BookRoomPage> {
                       "Date: ${selectedDate.day}-${selectedDate.month}-${selectedDate.year}",
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF004D4D),
-                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.grey.shade300,
+                      foregroundColor: Colors.black,
+                      elevation: 0,
                     ),
                   ),
                 ),
@@ -204,8 +206,9 @@ class _BookRoomPageState extends State<BookRoomPage> {
                         ? "Select Entry Time"
                         : "Entry: ${entryTime!.format(context)}"),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF004D4D),
-                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.grey.shade300,
+                      foregroundColor: Colors.black,
+                      elevation: 0,
                     ),
                   ),
                 ),
@@ -218,8 +221,9 @@ class _BookRoomPageState extends State<BookRoomPage> {
                         ? "Select Exit Time"
                         : "Exit: ${exitTime!.format(context)}"),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF004D4D),
-                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.grey.shade300,
+                      foregroundColor: Colors.black,
+                      elevation: 0,
                     ),
                   ),
                 ),

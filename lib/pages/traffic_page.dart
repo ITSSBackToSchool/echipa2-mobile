@@ -183,8 +183,9 @@ class _TrafficPageState extends State<TrafficPage> {
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: const Text("Traffic Checker"),
-        backgroundColor: colorScheme.primary,
-        centerTitle: true,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

@@ -94,10 +94,10 @@ class _WeatherPageState extends State<WeatherPage> {
       key: _scaffoldKey,
       backgroundColor: const Color(0xFFE6F2F2),
       appBar: AppBar(
-        title: const Text("Weather", style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF006B66),
-        foregroundColor: Colors.white,
-        elevation: 2,
+        title: const Text("Weather"),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
